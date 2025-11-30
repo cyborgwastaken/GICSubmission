@@ -1,19 +1,20 @@
-# ☁️ Dreamy Jumper
+# ☁️ NEONRUNNER
 
-**Dreamy Jumper** is a relaxing, pastel-themed endless platformer game built with HTML5 Canvas and Vanilla JavaScript. Jump across platforms, collect coins, and survive as the speed increases!
-<img width="1822" height="1184" alt="image" src="https://github.com/user-attachments/assets/b3c838bd-94cd-4309-8a31-9e1802b62521" />
+**NEONRUNNER** is a relaxing, pastel-themed endless platformer game built with HTML5 Canvas and Vanilla JavaScript. Jump across platforms, collect coins, and survive as the speed increases!
+<img width="1822" height="1184" alt="image" src="https://github.com/user-attachments/assets/fcd88f98-8ba1-4b69-b84e-4aa8e7ef5373" />
+
 
 
 ## 🎮 Play Now
 
 You can play the game directly in your browser here:
-### [👉 Click to Play Dreamy Jumper](https://cyborgwastaken.github.io/GICSubmission/)
+### [👉 Click to Play NEORUNNER](https://cyborgwastaken.github.io/GICSubmission/)
 
 ## ✨ Features
 
 * **Endless Gameplay:** The game generates platforms indefinitely. How high can you score?
 * **Dynamic Difficulty:** As you level up, the game speeds up, platforms get further apart, and your jump strength increases to compensate.
-* **Pastel Aesthetic:** Features a soothing "Soft Rainbow Fade" background animation and clean UI.
+* **Cyberpunk Aesthetic:** Features a "Dark Blue" background animation and clean UI.
 * **Coin System:** Collect gold coins for bonus points.
 * **Responsive Design:** The game canvas automatically resizes to fit your window.
 

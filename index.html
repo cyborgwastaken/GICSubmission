@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endless Platformer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #dc75aa;
+            color: #4B0082;
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; 
+            width: 100%;
+            height: 100%;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #ffb3ba; 
+            animation: softRainbowFade 24s linear infinite;
+        }
+
+        @keyframes softRainbowFade {
+            0%   { background-color: #ffb3ba; } 
+            15%  { background-color: #ffdfba; } 
+            30%  { background-color: #ffffba; } 
+            45%  { background-color: #baffc9; } 
+            60%  { background-color: #bae1ff; } 
+            75%  { background-color: #eecbff; } 
+            90%  { background-color: #f2a2e8; } 
+            100% { background-color: #ffb3ba; } 
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: transparent; 
+        }
+
+        #uiContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%; 
+            z-index: 10;
+            pointer-events: none; 
+            display: flex;
+            flex-direction: column; 
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #controls, #statsContainer {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        #controls {
+            margin-bottom: auto; 
+        }
+
+        #controls button {
+            font-family: 'Inter', Arial, sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #btnStart { background-color: #9370DB; }
+        #btnPause { background-color: #FFB6C1; }
+        #btnReset { background-color: #ADD8E6; }
+
+        #btnStart:hover { background-color: #825fC4; }
+        #btnPause:hover { background-color: #F0A6B1; }
+        #btnReset:hover { background-color: #9DC8D6; }
+
+        #statsContainer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 20px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-box {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        #scoreContainer { color: #9370DB; }
+        #coinContainer { color: #DAA520; }
+        #levelContainer { color: #9370DB; }
+
+        span { color: #4B0082; }
+    </style>
+</head>
+<body>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="uiContainer">
+        <div id="controls">
+            <button id="btnStart">Start</button>
+            <button id="btnPause">Pause</button>
+            <button id="btnReset">Reset</button>
+        </div>
+        <div id="statsContainer">
+            <div id="scoreContainer" class="stat-box">
+                Score: <span id="scoreDisplay">0</span>
+            </div>
+            <div id="coinContainer" class="stat-box">
+                Coins: <span id="coinDisplay">0</span>
+            </div>
+            <div id="levelContainer" class="stat-box">
+                Level: <span id="levelDisplay">1</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const btnStart = document.getElementById('btnStart');
+    const btnPause = document.getElementById('btnPause');
+    const btnReset = document.getElementById('btnReset');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const coinDisplay = document.getElementById('coinDisplay');
+    const levelDisplay = document.getElementById('levelDisplay');
+
+    let minPlatformY, maxPlatformY;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        minPlatformY = canvas.height * 0.25; 
+        maxPlatformY = canvas.height - 50;   
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // --- Game Constants ---
+    const GRAVITY = 0.5;
+    
+    // CHANGED: Renamed to INITIAL so we can change it later
+    const INITIAL_JUMP_STRENGTH = -10; 
+    // NEW: How much extra jump power per level (e.g., -0.5 adds to the negative number)
+    const JUMP_STRENGTH_INCREASE = 0.5; 
+    // NEW: Cap the jump strength so they don't jump off screen
+    const MAX_JUMP_STRENGTH = -15; 
+
+    const INITIAL_PLAYER_SPEED = 5;
+    const MAX_PLAYER_SPEED = 10;
+    const INITIAL_SCROLL_SPEED = 2;
+    const SCROLL_SPEED_INCREASE_PER_LEVEL = 0.7;
+    const MAX_SCROLL_SPEED = 10;
+    const SCORE_PER_LEVEL = 10;
+    const POINTS_PER_LAND = 1;
+    const POINTS_PER_COIN = 5;
+
+    const COIN_RADIUS = 10;
+    const COIN_COLOR = '#FFD700';
+    const COIN_CHANCE = 0.7;
+
+    const PLATFORM_WIDTH = 150;
+    const PLATFORM_HEIGHT = 20;
+    const INITIAL_PLATFORM_HORIZONTAL_GAP = 220;
+    const MAX_PLATFORM_HORIZONTAL_GAP = 500;
+    const HORIZONTAL_GAP_INCREASE_PER_SCORE = 5;
+    const PLATFORM_COLOR = 'rgba(200, 200, 200, 0.8)';
+    const MAX_JUMP_HEIGHT_GAIN = 140;
+    const MAX_FALL_DISTANCE = 150;
+
+    let player, platforms, coins, keys, score, coinsCollected, gameState, gameLoopId;
+    let level;
+    let currentScrollSpeed;
+    let currentPlayerSpeed;
+    let currentJumpStrength; // NEW Variable
+    let currentHorizontalGap;
+    let platformTrend;
+    let platformsInTrend;
+    let platformsPerTrend;
+
+    keys = { left: false, right: false, up: false };
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = true;
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
+    });
+
+    function generateNewPlatform() {
+        if (platforms.length === 0) return;
+
+        const lastPlatform = platforms[platforms.length - 1];
+
+        if (platformsInTrend >= platformsPerTrend) {
+            platformTrend = (platformTrend === 'up') ? 'down' : 'up';
+            platformsInTrend = 0;
+            platformsPerTrend = Math.floor(Math.random() * 4) + 3;
+        }
+
+        let newY;
+        if (platformTrend === 'up') {
+            let randomUp = (Math.random() * 80) + 40;
+            newY = lastPlatform.y - Math.min(randomUp, MAX_JUMP_HEIGHT_GAIN);
+        } else {
+            let randomDown = (Math.random() * 60) + 20;
+            newY = lastPlatform.y + Math.min(randomDown, MAX_FALL_DISTANCE);
+        }
+
+        if (newY < minPlatformY) {
+            newY = minPlatformY;
+            platformTrend = 'down';
+            platformsInTrend = 0;
+        } else if (newY > maxPlatformY) {
+            newY = maxPlatformY;
+            platformTrend = 'up';
+            platformsInTrend = 0;
+        }
+
+        const newX = lastPlatform.x + currentHorizontalGap;
+
+        platforms.push({
+            x: newX,
+            y: newY,
+            width: PLATFORM_WIDTH,
+            height: PLATFORM_HEIGHT,
+            color: PLATFORM_COLOR,
+            isLandedOn: false
+        });
+
+        if (Math.random() < COIN_CHANCE) {
+            const coinX = newX + (PLATFORM_WIDTH / 2);
+            const coinY = newY - COIN_RADIUS - 15;
+            coins.push({
+                x: coinX,
+                y: coinY,
+                radius: COIN_RADIUS,
+                color: COIN_COLOR
+            });
+        }
+
+        platformsInTrend++;
+    }
+
+    function managePlatforms() {
+        platforms = platforms.filter(platform => platform.x + platform.width > 0);
+        coins = coins.filter(coin => coin.x + coin.radius > 0);
+
+        const lastPlatform = platforms[platforms.length - 1];
+        if (lastPlatform.x < canvas.width) {
+            generateNewPlatform();
+        }
+    }
+
+    function resetGame() {
+
+        resizeCanvas();
+
+        player = {
+            x: 50,
+            y: canvas.height - 100, 
+            width: 30,
+            height: 30,
+            color: '#808080',
+            dx: 0,
+            dy: 0,
+            onGround: false
+        };
+
+        score = 0;
+        updateScoreDisplay();
+        coinsCollected = 0;
+        updateCoinDisplay();
+
+        level = 1;
+        updateLevelDisplay();
+        
+        currentScrollSpeed = INITIAL_SCROLL_SPEED;
+        currentPlayerSpeed = INITIAL_PLAYER_SPEED;
+        currentHorizontalGap = INITIAL_PLATFORM_HORIZONTAL_GAP;
+        
+        // NEW: Reset Jump Strength
+        currentJumpStrength = INITIAL_JUMP_STRENGTH;
+
+        platformTrend = 'up';
+        platformsInTrend = 0;
+        platformsPerTrend = Math.floor(Math.random() * 4) + 3;
+
+        platforms = [
+            {
+                x: 0,
+                y: canvas.height - 40, 
+                width: 300,
+                height: 40,
+                color: PLATFORM_COLOR,
+                isLandedOn: true
+            }
+        ];
+
+        coins = [];
+
+        while (platforms[platforms.length - 1].x < canvas.width) {
+            generateNewPlatform();
+        }
+
+        gameState = 'menu';
+        updateScoreDisplay();
+    }
+
+    function updateCoinDisplay() { coinDisplay.textContent = coinsCollected; }
+    function updateScoreDisplay() { scoreDisplay.textContent = score; }
+    function updateLevelDisplay() { levelDisplay.textContent = level; }
+
+    function update() {
+
+        if (keys.left) player.dx = -currentPlayerSpeed;
+        else if (keys.right) player.dx = currentPlayerSpeed;
+        else player.dx = 0;
+
+        // CHANGED: Use currentJumpStrength instead of constant
+        if (keys.up && player.onGround) {
+            player.dy = currentJumpStrength;
+            player.onGround = false;
+        }
+
+        player.dy += GRAVITY;
+        player.x += player.dx;
+        player.y += player.dy;
+
+        player.x -= currentScrollSpeed;
+        platforms.forEach(p => p.x -= currentScrollSpeed);
+        coins.forEach(c => c.x -= currentScrollSpeed);
+
+        player.onGround = false;
+        platforms.forEach(platform => {
+            if (player.x < platform.x + platform.width &&
+                player.x + player.width > platform.x &&
+                player.y + player.height > platform.y &&
+                player.y < platform.y &&
+                player.dy > 0)
+            {
+                player.y = platform.y - player.height;
+                player.dy = 0;
+                player.onGround = true;
+
+                if (!platform.isLandedOn) {
+                    score += POINTS_PER_LAND;
+                    updateScoreDisplay();
+                    platform.isLandedOn = true;
+
+                    currentHorizontalGap = Math.min(
+                        MAX_PLATFORM_HORIZONTAL_GAP,
+                        INITIAL_PLATFORM_HORIZONTAL_GAP + (score * HORIZONTAL_GAP_INCREASE_PER_SCORE)
+                    );
+
+                    const gapRange = MAX_PLATFORM_HORIZONTAL_GAP - INITIAL_PLATFORM_HORIZONTAL_GAP;
+                    const speedRange = MAX_PLAYER_SPEED - INITIAL_PLAYER_SPEED;
+                    const gapPercentage = (currentHorizontalGap - INITIAL_PLATFORM_HORIZONTAL_GAP) / gapRange;
+                    currentPlayerSpeed = INITIAL_PLAYER_SPEED + (speedRange * gapPercentage);
+
+                    if (score > 0 && score % SCORE_PER_LEVEL === 0) {
+                        level++;
+                        updateLevelDisplay();
+                        
+                        // Increase Scroll Speed
+                        currentScrollSpeed = Math.min(
+                            MAX_SCROLL_SPEED,
+                            INITIAL_SCROLL_SPEED + ((level - 1) * SCROLL_SPEED_INCREASE_PER_LEVEL)
+                        );
+
+                        // NEW: Increase Jump Strength (make it more negative)
+                        // e.g. -10 -> -10.5 -> -11.0
+                        let newJumpStrength = INITIAL_JUMP_STRENGTH - ((level - 1) * JUMP_STRENGTH_INCREASE);
+                        // Limit to Max Jump Strength (e.g. -15 is max, so we take the MAX of the two negative numbers)
+                        currentJumpStrength = Math.max(MAX_JUMP_STRENGTH, newJumpStrength);
+                    }
+                }
+            }
+        });
+
+        checkCoinCollisions();
+
+        if (player.x < 0) player.x = 0;
+        if (player.x + player.width > canvas.width) {
+            player.x = canvas.width - player.width;
+        }
+
+        managePlatforms();
+
+        if (player.y > canvas.height) {
+            gameState = 'gameOver';
+            btnStart.textContent = 'Play Again';
+        }
+    }
+
+    function checkCoinCollisions() {
+        for (let i = coins.length - 1; i >= 0; i--) {
+            const coin = coins[i];
+            if (player.x < coin.x + coin.radius &&
+                player.x + player.width > coin.x - coin.radius &&
+                player.y < coin.y + coin.radius &&
+                player.y + player.height > coin.y - coin.radius)
+            {
+                coinsCollected += 1;
+                updateCoinDisplay();
+                coins.splice(i, 1);
+            }
+        }
+    }
+
+    function drawPlayer() {
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+
+    function drawPlatforms() {
+        platforms.forEach(platform => {
+            ctx.fillStyle = platform.color;
+            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+        });
+    }
+
+    function drawCoins() {
+        coins.forEach(coin => {
+            ctx.beginPath();
+            ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+            ctx.fillStyle = coin.color;
+            ctx.fill();
+            ctx.closePath();
+        });
+    }
+
+    function drawOverlay(text1, text2) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.font = "60px 'Inter', sans-serif";
+        ctx.fillText(text1, canvas.width / 2, canvas.height / 2 - 20);
+        if (text2) {
+            ctx.font = "30px 'Inter', sans-serif";
+            ctx.fillText(text2, canvas.width / 2, canvas.height / 2 + 30);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawPlatforms();
+        drawCoins();
+        drawPlayer();
+
+        if (gameState === 'menu') {
+            drawOverlay("Dreamy Jumper", "Press Start to Play");
+        } else if (gameState === 'paused') {
+            drawOverlay("Paused", "");
+        } else if (gameState === 'gameOver') {
+            drawOverlay("Game Over", `Score: ${score} | Coins: ${coinsCollected} | Level: ${level}`);
+        }
+    }
+
+    function gameLoop() {
+        if (gameState === 'running') update();
+        draw();
+        gameLoopId = requestAnimationFrame(gameLoop);
+    }
+
+    btnStart.addEventListener('click', () => {
+        if (gameState === 'menu' || gameState === 'paused') {
+            gameState = 'running';
+            btnStart.textContent = 'Start';
+        } else if (gameState === 'gameOver') {
+            resetGame();
+            gameState = 'running';
+            btnStart.textContent = 'Start';
+        }
+    });
+
+    btnPause.addEventListener('click', () => {
+        if (gameState === 'running') gameState = 'paused';
+    });
+
+    btnReset.addEventListener('click', () => {
+        if (gameLoopId) cancelAnimationFrame(gameLoopId);
+        resetGame();
+        draw();
+        gameLoop();
+    });
+
+    resetGame();
+    gameLoop();
+
+</script>
+</body>
+</html>

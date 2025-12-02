@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gaming Portal</title>
+    <title>My Gaming Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Monaco Editor Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -30,7 +32,6 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            /* Subtle grid background */
             background-image: 
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
@@ -39,9 +40,17 @@
 
         .container {
             text-align: center;
-            max-width: 800px;
+            max-width: 95vw; /* Changed from 900px to fill the window */
+            width: 100%;
             padding: 2rem;
             z-index: 10;
+            max-height: 100vh;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        
+        .container::-webkit-scrollbar {
+            display: none;
         }
 
         h1 {
@@ -72,6 +81,7 @@
             transition: transform 0.3s ease, border-color 0.3s ease;
             position: relative;
             overflow: hidden;
+            width: 100%;
         }
 
         .card:hover {
@@ -79,7 +89,6 @@
             border-color: var(--blue);
         }
 
-        /* Decoration circles behind the card */
         .decoration {
             position: absolute;
             border-radius: 50%;
@@ -97,29 +106,83 @@
             display: block;
         }
 
-        .btn-play {
-            display: inline-block;
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
             margin-top: 2rem;
-            padding: 1rem 3rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
             font-family: 'Outfit', sans-serif;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1rem;
             text-decoration: none;
-            color: var(--black);
-            background: var(--white);
             border-radius: 50px;
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             position: relative;
             z-index: 2;
+            cursor: pointer;
+            border: 2px solid var(--white);
+        }
+
+        .btn-play {
+            color: var(--black);
+            background: var(--white);
         }
 
         .btn-play:hover {
             transform: scale(1.05);
             background: var(--blue);
+            border-color: var(--blue);
             color: var(--white);
             box-shadow: 0 0 30px rgba(14, 165, 233, 0.5);
+        }
+
+        .btn-code {
+            color: var(--white);
+            background: transparent;
+        }
+
+        .btn-code:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--pink);
+            color: var(--pink);
+        }
+
+        /* Monaco Editor Section Styles */
+        #codeSection {
+            margin-top: 2rem;
+            text-align: left;
+            display: none;
+            animation: fadeIn 0.5s ease;
+            width: 100%;
+        }
+
+        #monaco-container {
+            width: 100%;
+            height: 400px; /* Fixed height for the editor */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden; /* Ensure corners clip */
+        }
+
+        .code-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .assignment-info {
@@ -138,7 +201,6 @@
             gap: 0.5rem;
         }
 
-        /* Blinking cursor for tech feel */
         .cursor-blink {
             display: inline-block;
             width: 10px;
@@ -156,18 +218,31 @@
     <div class="decoration blob-2"></div>
 
     <div class="container">
-        <h1>Ayushman Das</h1>
-        <p class="subtitle">Gaming in Cloud Assignment</p>
+        <h1>Gaming Portal</h1>
+        <p class="subtitle">Cloud Computing Assignment • Objective 01</p>
 
         <div class="card">
-            <span class="game-title">&lt;Neon Runner /&gt;</span>
+            <span class="game-title">&lt;Dreamy Jumper /&gt;</span>
             <p>An endless platformer developed in HTML5 Canvas.</p>
             <p style="margin-top: 10px; font-size: 0.9rem; opacity: 0.7;">Hosted via AWS S3 Static Website Hosting</p>
             
-            <!-- IMPORTANT: REPLACE THE LINK BELOW WITH YOUR AWS LINK -->
-            <a href="http://neonrunner-cyborg.s3-website.ap-south-1.amazonaws.com" class="btn-play">
-                Launch Game
-            </a>
+            <div class="button-group">
+                <!-- IMPORTANT: REPLACE THE LINK BELOW WITH YOUR AWS LINK -->
+                <a href="http://neonrunner-cyborg.s3-website.ap-south-1.amazonaws.com" class="btn btn-play" target="_blank">
+                    Launch Game
+                </a>
+                
+                <button onclick="toggleCode()" class="btn btn-code">
+                    Source Code
+                </button>
+            </div>
+
+            <!-- Monaco Editor Section -->
+            <div id="codeSection">
+                <span class="code-header">// index.html (Read Only)</span>
+                <!-- This div will hold the Monaco Editor -->
+                <div id="monaco-container"></div>
+            </div>
         </div>
 
         <div class="assignment-info">
@@ -176,5 +251,67 @@
         </div>
     </div>
 
+    <script>
+        let editor;
+
+        async function toggleCode() {
+            const codeSection = document.getElementById('codeSection');
+            const btn = document.querySelector('.btn-code');
+            
+            if (codeSection.style.display === 'block') {
+                // Hide
+                codeSection.style.display = 'none';
+                btn.textContent = 'Source Code';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            } else {
+                // Show
+                codeSection.style.display = 'block';
+                btn.textContent = 'Hide Code';
+                btn.style.color = 'var(--pink)';
+                btn.style.borderColor = 'var(--pink)';
+                
+                // Initialize Monaco Editor if not already created
+                if (!editor) {
+                    const container = document.getElementById('monaco-container');
+                    container.innerHTML = '<div style="color:white; padding:20px; font-family:monospace;">Loading code from game.html...</div>';
+
+                    try {
+                        // Fetch the content of 'game.html'
+                        // NOTE: Ensure 'game.html' exists in the same directory!
+                        const response = await fetch('game.html');
+                        let codeContent = '';
+
+                        if (response.ok) {
+                            codeContent = await response.text();
+                        } else {
+                            codeContent = '// Error: Could not find "game.html".\n// Please make sure the game file is named "game.html" and is in the same directory as this file.';
+                        }
+                        
+                        // Clear loading text
+                        container.innerHTML = '';
+
+                        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+                        
+                        require(['vs/editor/editor.main'], function() {
+                            editor = monaco.editor.create(container, {
+                                value: codeContent,
+                                language: 'html',
+                                theme: 'vs-dark', // Dark theme to match site
+                                readOnly: true, // Read only mode
+                                automaticLayout: true, // Resizes automatically
+                                minimap: { enabled: true },
+                                scrollBeyondLastLine: false,
+                                fontSize: 14,
+                                fontFamily: "'JetBrains Mono', monospace"
+                            });
+                        });
+                    } catch (error) {
+                         container.innerHTML = '<div style="color:red; padding:20px; font-family:monospace;">Error loading file: ' + error.message + '</div>';
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 </html>

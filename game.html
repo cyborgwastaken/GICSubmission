@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreamy Jumper - Endless Platformer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --blue: #0ea5e9;
+            --pink: #ec4899;
+            --black: #0a0a0a;
+            --white: #ffffff;
+            --light-gray: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--black);
+            color: var(--white);
+            overflow: hidden;
+            cursor: none;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Custom Cursor */
+        /* Custom Cursor */
+        .custom-cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 2px; /* Tighter gap looks better for < > */
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px; /* Increased size for visibility */
+            font-weight: 800;
+            transition: transform 0.1s ease-out;
+        }
+
+        .cursor-eye {
+            color: var(--white); /* VISIBILITY FIX: Changed from black to white */
+            transition: all 0.3s ease-out;
+            display: inline-block;
+        }
+
+        .cursor-left {
+            transform: rotate(0deg);
+        }
+
+        .cursor-right {
+            transform: rotate(0deg);
+        }
+
+        /* Hover state - eyes open wide / tilt */
+        .custom-cursor.cursor-hover .cursor-left {
+            transform: rotate(-25deg) translateX(-5px);
+            color: var(--pink);
+        }
+
+        .custom-cursor.cursor-hover .cursor-right {
+            transform: rotate(25deg) translateX(5px);
+            color: var(--blue);
+        }
+
+        /* Blink animation */
+        @keyframes blink {
+            0%, 90%, 100% { 
+                transform: scaleY(1);
+                opacity: 1;
+            }
+            95% { 
+                transform: scaleY(0.1); /* Squishes the < > flat to blink */
+                opacity: 0.5;
+            }
+        }
+
+        .cursor-eye {
+            animation: blink 5s infinite;
+        }
+
+        .cursor-left {
+            animation-delay: 0.1s;
+        }
+        button, canvas {
+            cursor: none;
+        }
+
+
+        /* Game Container */
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--black) 0%, #1a1a1a 100%);
+            padding-top: 48px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: calc(100vh - 48px);
+            background: transparent;
+        }
+
+        /* UI Overlay */
+        #uiContainer {
+            position: absolute;
+            top: 48px;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 48px);
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem;
+        }
+
+        /* Controls */
+        #controls {
+            pointer-events: auto;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        #controls button {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--white);
+            padding: 1rem 2rem;
+            border: 2px solid var(--white);
+            background: transparent;
+            cursor: none;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #controls button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--white);
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+
+        #controls button:hover::before {
+            left: 0;
+        }
+
+        #controls button:hover {
+            color: var(--black);
+        }
+
+        #btnStart {
+            border-color: var(--blue);
+        }
+
+        #btnStart::before {
+            background: var(--blue);
+        }
+
+        #btnPause {
+            border-color: var(--pink);
+        }
+
+        #btnPause::before {
+            background: var(--pink);
+        }
+
+        #btnReset {
+            border-color: var(--white);
+        }
+
+        /* Stats Container */
+        #statsContainer {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: none;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid var(--blue);
+            padding: 1rem 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:nth-child(2) {
+            border-left-color: var(--pink);
+        }
+
+        .stat-box:nth-child(3) {
+            border-left-color: var(--blue);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            opacity: 0.7;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        /* Game Overlay Messages */
+        .game-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .overlay-title {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--blue), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .overlay-subtitle {
+            font-size: 1.5rem;
+            color: var(--white);
+            opacity: 0.8;
+            font-weight: 300;
+        }
+
+        .overlay-stats {
+            margin-top: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--white);
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+        }
+
+        .overlay-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .overlay-stat-item span:first-child {
+            color: var(--blue);
+            font-weight: 700;
+        }
+
+        /* Instructions Panel */
+        .instructions {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 3rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            display: flex;
+            gap: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .instructions.show {
+            opacity: 1;
+        }
+
+        .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin: 0 0.25rem;
+            font-weight: 700;
+            color: var(--blue);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-marquee {
+                font-size: 0.8rem;
+                padding: 0.5rem 0;
+            }
+
+            #controls {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            #controls button {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.9rem;
+            }
+
+            #statsContainer {
+                right: 1rem;
+                top: 1rem;
+                gap: 1rem;
+            }
+
+            .stat-box {
+                padding: 0.75rem 1.5rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .overlay-title {
+                font-size: 2.5rem;
+            }
+
+            .overlay-subtitle {
+                font-size: 1rem;
+            }
+
+            .instructions {
+                flex-direction: column;
+                gap: 0.5rem;
+                font-size: 0.75rem;
+                padding: 1rem 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="custom-cursor">
+    <span class="cursor-eye cursor-right">&gt;</span>
+    <span class="cursor-eye cursor-left">&lt;</span>
+    
+</div>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="uiContainer">
+        <div id="controls">
+            <button id="btnStart">Start</button>
+            <button id="btnPause">Pause</button>
+            <button id="btnReset">Reset</button>
+        </div>
+
+        <div id="statsContainer">
+            <div class="stat-box">
+                <span class="stat-label">Score</span>
+                <span class="stat-value" id="scoreDisplay">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Coins</span>
+                <span class="stat-value" id="coinDisplay">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Level</span>
+                <span class="stat-value" id="levelDisplay">1</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-overlay" id="gameOverlay"></div>
+    
+    <div class="instructions" id="instructions">
+        <span>Move: <span class="key">←</span> <span class="key">→</span> or <span class="key">A</span> <span class="key">D</span></span>
+        <span>Jump: <span class="key">SPACE</span> or <span class="key">↑</span> or <span class="key">W</span></span>
+    </div>
+</div>
+
+<script>
+    // Custom Cursor
+    const customCursor = document.querySelector('.custom-cursor');
+    const hoverElements = document.querySelectorAll('button, canvas');
+
+    document.addEventListener('mousemove', (e) => {
+        customCursor.style.left = e.clientX + 'px';
+        customCursor.style.top = e.clientY + 'px';
+    });
+
+    hoverElements.forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            customCursor.classList.add('cursor-hover');
+        });
+        el.addEventListener('mouseleave', () => {
+            customCursor.classList.remove('cursor-hover');
+        });
+    });
+
+    // Game Code
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const btnStart = document.getElementById('btnStart');
+    const btnPause = document.getElementById('btnPause');
+    const btnReset = document.getElementById('btnReset');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const coinDisplay = document.getElementById('coinDisplay');
+    const levelDisplay = document.getElementById('levelDisplay');
+    const gameOverlay = document.getElementById('gameOverlay');
+    const instructions = document.getElementById('instructions');
+
+    let minPlatformY, maxPlatformY;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 48;
+
+        minPlatformY = canvas.height * 0.25;
+        maxPlatformY = canvas.height - 50;
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Game Constants
+    const GRAVITY = 0.5;
+    const INITIAL_JUMP_STRENGTH = -10;
+    const JUMP_STRENGTH_INCREASE = 0.5;
+    const MAX_JUMP_STRENGTH = -15;
+    const INITIAL_PLAYER_SPEED = 5;
+    const MAX_PLAYER_SPEED = 10;
+    const INITIAL_SCROLL_SPEED = 2;
+    const SCROLL_SPEED_INCREASE_PER_LEVEL = 0.7;
+    const MAX_SCROLL_SPEED = 10;
+    const SCORE_PER_LEVEL = 10;
+    const POINTS_PER_LAND = 1;
+    const POINTS_PER_COIN = 5;
+    const COIN_RADIUS = 12;
+    const COIN_COLOR = '#0ea5e9';
+    const COIN_CHANCE = 0.7;
+    const PLATFORM_WIDTH = 150;
+    const PLATFORM_HEIGHT = 20;
+    const INITIAL_PLATFORM_HORIZONTAL_GAP = 220;
+    const MAX_PLATFORM_HORIZONTAL_GAP = 500;
+    const HORIZONTAL_GAP_INCREASE_PER_SCORE = 5;
+    const PLATFORM_COLOR = 'rgba(255, 255, 255, 0.1)';
+    const MAX_JUMP_HEIGHT_GAIN = 140;
+    const MAX_FALL_DISTANCE = 150;
+
+    let player, platforms, coins, keys, score, coinsCollected, gameState, gameLoopId;
+    let level, currentScrollSpeed, currentPlayerSpeed, currentJumpStrength, currentHorizontalGap;
+    let platformTrend, platformsInTrend, platformsPerTrend;
+
+    keys = { left: false, right: false, up: false };
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = true;
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
+    });
+
+    function generateNewPlatform() {
+        if (platforms.length === 0) return;
+
+        const lastPlatform = platforms[platforms.length - 1];
+
+        if (platformsInTrend >= platformsPerTrend) {
+            platformTrend = (platformTrend === 'up') ? 'down' : 'up';
+            platformsInTrend = 0;
+            platformsPerTrend = Math.floor(Math.random() * 4) + 3;
+        }
+
+        let newY;
+        if (platformTrend === 'up') {
+            let randomUp = (Math.random() * 80) + 40;
+            newY = lastPlatform.y - Math.min(randomUp, MAX_JUMP_HEIGHT_GAIN);
+        } else {
+            let randomDown = (Math.random() * 60) + 20;
+            newY = lastPlatform.y + Math.min(randomDown, MAX_FALL_DISTANCE);
+        }
+
+        if (newY < minPlatformY) {
+            newY = minPlatformY;
+            platformTrend = 'down';
+            platformsInTrend = 0;
+        } else if (newY > maxPlatformY) {
+            newY = maxPlatformY;
+            platformTrend = 'up';
+            platformsInTrend = 0;
+        }
+
+        const newX = lastPlatform.x + currentHorizontalGap;
+
+        platforms.push({
+            x: newX,
+            y: newY,
+            width: PLATFORM_WIDTH,
+            height: PLATFORM_HEIGHT,
+            color: PLATFORM_COLOR,
+            isLandedOn: false
+        });
+
+        if (Math.random() < COIN_CHANCE) {
+            const coinX = newX + (PLATFORM_WIDTH / 2);
+            const coinY = newY - COIN_RADIUS - 20;
+            coins.push({
+                x: coinX,
+                y: coinY,
+                radius: COIN_RADIUS,
+                color: COIN_COLOR
+            });
+        }
+
+        platformsInTrend++;
+    }
+
+    function managePlatforms() {
+        platforms = platforms.filter(platform => platform.x + platform.width > 0);
+        coins = coins.filter(coin => coin.x + coin.radius > 0);
+
+        const lastPlatform = platforms[platforms.length - 1];
+        if (lastPlatform.x < canvas.width) {
+            generateNewPlatform();
+        }
+    }
+
+    function resetGame() {
+        resizeCanvas();
+
+        player = {
+            x: 50,
+            y: canvas.height - 100,
+            width: 30,
+            height: 30,
+            color: '#ec4899',
+            dx: 0,
+            dy: 0,
+            onGround: false
+        };
+
+        score = 0;
+        updateScoreDisplay();
+        coinsCollected = 0;
+        updateCoinDisplay();
+        level = 1;
+        updateLevelDisplay();
+        currentScrollSpeed = INITIAL_SCROLL_SPEED;
+        currentPlayerSpeed = INITIAL_PLAYER_SPEED;
+        currentHorizontalGap = INITIAL_PLATFORM_HORIZONTAL_GAP;
+        currentJumpStrength = INITIAL_JUMP_STRENGTH;
+        platformTrend = 'up';
+        platformsInTrend = 0;
+        platformsPerTrend = Math.floor(Math.random() * 4) + 3;
+
+        platforms = [
+            {
+                x: 0,
+                y: canvas.height - 40,
+                width: 300,
+                height: 40,
+                color: PLATFORM_COLOR,
+                isLandedOn: true
+            }
+        ];
+
+        coins = [];
+
+        while (platforms[platforms.length - 1].x < canvas.width) {
+            generateNewPlatform();
+        }
+
+        gameState = 'menu';
+        updateScoreDisplay();
+        showOverlay('menu');
+    }
+
+    function updateCoinDisplay() { coinDisplay.textContent = coinsCollected; }
+    function updateScoreDisplay() { scoreDisplay.textContent = score; }
+    function updateLevelDisplay() { levelDisplay.textContent = level; }
+
+    function showOverlay(state) {
+        if (state === 'menu') {
+            gameOverlay.innerHTML = `
+                <div class="overlay-title">Dreamy Jumper</div>
+                <div class="overlay-subtitle">Press Start to Play</div>
+            `;
+            instructions.classList.add('show');
+        } else if (state === 'paused') {
+            gameOverlay.innerHTML = `
+                <div class="overlay-title">Paused</div>
+            `;
+            instructions.classList.remove('show');
+        } else if (state === 'gameOver') {
+            gameOverlay.innerHTML = `
+                <div class="overlay-title">Game Over</div>
+                <div class="overlay-stats">
+                    <div class="overlay-stat-item"><span>Score:</span> ${score}</div>
+                    <div class="overlay-stat-item"><span>Coins:</span> ${coinsCollected}</div>
+                    <div class="overlay-stat-item"><span>Level:</span> ${level}</div>
+                </div>
+            `;
+            instructions.classList.remove('show');
+        } else {
+            gameOverlay.innerHTML = '';
+            instructions.classList.remove('show');
+        }
+    }
+
+    function update() {
+        if (keys.left) player.dx = -currentPlayerSpeed;
+        else if (keys.right) player.dx = currentPlayerSpeed;
+        else player.dx = 0;
+
+        if (keys.up && player.onGround) {
+            player.dy = currentJumpStrength;
+            player.onGround = false;
+        }
+
+        player.dy += GRAVITY;
+        player.x += player.dx;
+        player.y += player.dy;
+
+        player.x -= currentScrollSpeed;
+        platforms.forEach(p => p.x -= currentScrollSpeed);
+        coins.forEach(c => c.x -= currentScrollSpeed);
+
+        player.onGround = false;
+        platforms.forEach(platform => {
+            if (player.x < platform.x + platform.width &&
+                player.x + player.width > platform.x &&
+                player.y + player.height > platform.y &&
+                player.y < platform.y &&
+                player.dy > 0)
+            {
+                player.y = platform.y - player.height;
+                player.dy = 0;
+                player.onGround = true;
+
+                if (!platform.isLandedOn) {
+                    score += POINTS_PER_LAND;
+                    updateScoreDisplay();
+                    platform.isLandedOn = true;
+
+                    currentHorizontalGap = Math.min(
+                        MAX_PLATFORM_HORIZONTAL_GAP,
+                        INITIAL_PLATFORM_HORIZONTAL_GAP + (score * HORIZONTAL_GAP_INCREASE_PER_SCORE)
+                    );
+
+                    const gapRange = MAX_PLATFORM_HORIZONTAL_GAP - INITIAL_PLATFORM_HORIZONTAL_GAP;
+                    const speedRange = MAX_PLAYER_SPEED - INITIAL_PLAYER_SPEED;
+                    const gapPercentage = (currentHorizontalGap - INITIAL_PLATFORM_HORIZONTAL_GAP) / gapRange;
+                    currentPlayerSpeed = INITIAL_PLAYER_SPEED + (speedRange * gapPercentage);
+
+                    if (score > 0 && score % SCORE_PER_LEVEL === 0) {
+                        level++;
+                        updateLevelDisplay();
+                        
+                        currentScrollSpeed = Math.min(
+                            MAX_SCROLL_SPEED,
+                            INITIAL_SCROLL_SPEED + ((level - 1) * SCROLL_SPEED_INCREASE_PER_LEVEL)
+                        );
+
+                        let newJumpStrength = INITIAL_JUMP_STRENGTH - ((level - 1) * JUMP_STRENGTH_INCREASE);
+                        currentJumpStrength = Math.max(MAX_JUMP_STRENGTH, newJumpStrength);
+                    }
+                }
+            }
+        });
+
+        checkCoinCollisions();
+
+        if (player.x < 0) player.x = 0;
+        if (player.x + player.width > canvas.width) {
+            player.x = canvas.width - player.width;
+        }
+
+        managePlatforms();
+
+        if (player.y > canvas.height) {
+            gameState = 'gameOver';
+            btnStart.textContent = 'Play Again';
+            showOverlay('gameOver');
+        }
+    }
+
+    function checkCoinCollisions() {
+        for (let i = coins.length - 1; i >= 0; i--) {
+            const coin = coins[i];
+            if (player.x < coin.x + coin.radius &&
+                player.x + player.width > coin.x - coin.radius &&
+                player.y < coin.y + coin.radius &&
+                player.y + player.height > coin.y - coin.radius)
+            {
+                coinsCollected += 1;
+                updateCoinDisplay();
+                coins.splice(i, 1);
+            }
+        }
+    }
+
+    function drawPlayer() {
+        // Draw player with glow effect
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = player.color;
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        ctx.shadowBlur = 0;
+    }
+
+    function drawPlatforms() {
+        platforms.forEach(platform => {
+            ctx.fillStyle = platform.color;
+            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            
+            // Add accent line on top
+            ctx.fillStyle = 'rgba(14, 165, 233, 0.5)';
+            ctx.fillRect(platform.x, platform.y, platform.width, 2);
+        });
+    }
+
+    function drawCoins() {
+        coins.forEach(coin => {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = coin.color;
+            ctx.beginPath();
+            ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+            ctx.fillStyle = coin.color;
+            ctx.fill();
+            ctx.closePath();
+            ctx.shadowBlur = 0;
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawPlatforms();
+        drawCoins();
+        drawPlayer();
+    }
+
+    function gameLoop() {
+        if (gameState === 'running') update();
+        draw();
+        gameLoopId = requestAnimationFrame(gameLoop);
+    }
+
+    btnStart.addEventListener('click', () => {
+        if (gameState === 'menu' || gameState === 'paused') {
+            gameState = 'running';
+            btnStart.textContent = 'Start';
+            showOverlay('');
+        } else if (gameState === 'gameOver') {
+            resetGame();
+            gameState = 'running';
+            btnStart.textContent = 'Start';
+            showOverlay('');
+        }
+    });
+
+    btnPause.addEventListener('click', () => {
+        if (gameState === 'running') {
+            gameState = 'paused';
+            showOverlay('paused');
+        }
+    });
+
+    btnReset.addEventListener('click', () => {
+        if (gameLoopId) cancelAnimationFrame(gameLoopId);
+        resetGame();
+        draw();
+        gameLoop();
+    });
+
+    resetGame();
+    gameLoop();
+</script>
+</body>
+</html>

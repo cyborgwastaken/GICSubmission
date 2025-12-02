@@ -1,7 +1,9 @@
 # ☁️ NEONRUNNER
 
 **NEONRUNNER** is a relaxing, pastel-themed endless platformer game built with HTML5 Canvas and Vanilla JavaScript. Jump across platforms, collect coins, and survive as the speed increases!
-<img width="1822" height="1184" alt="image" src="https://github.com/user-attachments/assets/fcd88f98-8ba1-4b69-b84e-4aa8e7ef5373" />
+<img width="1822" height="1184" alt="image" src="https://github.com/user-attachments/assets/6da6f3ae-a219-4874-bc6e-573290f4ba0f" />
+<img width="1822" height="1184" alt="image" src="https://github.com/user-attachments/assets/b98879ba-e24c-47ef-9161-9e7c0a5331a9" />
+
 
 
 
@@ -37,7 +39,7 @@ Since this is a static web project, you don't need to install any dependencies.
     git clone https://github.com/cyborgwastaken/GICSubmission.git
     ```
 2.  **Run locally:**
-    Simply double-click the `index.html` file to open it in your default web browser.
+    Simply double-click the `game.html` file to open it in your default web browser.
 
 ## 💻 Tech Stack
 

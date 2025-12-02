@@ -3,582 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Endless Platformer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <title>My Gaming Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            background-color: #050510;
-            color: #fff;
-            font-family: 'Orbitron', sans-serif; /* Tech font */
+        * {
             margin: 0;
             padding: 0;
-            overflow: hidden; 
-            width: 100%;
-            height: 100%;
+            box-sizing: border-box;
         }
 
-        /* --- New Navbar --- */
-        nav {
+        :root {
+            --blue: #0ea5e9;
+            --pink: #ec4899;
+            --black: #0a0a0a;
+            --white: #ffffff;
+            --card-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--black);
+            color: var(--white);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            /* Subtle grid background */
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 2rem;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--blue), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        p.subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            border-radius: 20px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--blue);
+        }
+
+        /* Decoration circles behind the card */
+        .decoration {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background: rgba(10, 10, 30, 0.95);
-            border-bottom: 2px solid #00f3ff;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+        }
+        .blob-1 { background: var(--blue); width: 300px; height: 300px; top: -100px; left: -100px; opacity: 0.2; }
+        .blob-2 { background: var(--pink); width: 300px; height: 300px; bottom: -100px; right: -100px; opacity: 0.2; }
+
+        .game-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .btn-play {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 1rem 3rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-decoration: none;
+            color: var(--black);
+            background: var(--white);
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn-play:hover {
+            transform: scale(1.05);
+            background: var(--blue);
+            color: var(--white);
+            box-shadow: 0 0 30px rgba(14, 165, 233, 0.5);
+        }
+
+        .assignment-info {
+            margin-top: 4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            opacity: 0.5;
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+        }
+        
+        .assignment-info span {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 30px;
-            box-sizing: border-box;
-            z-index: 100;
+            gap: 0.5rem;
         }
 
-        .nav-brand {
-            font-size: 20px;
-            font-weight: 700;
-            color: #00f3ff;
-            text-shadow: 0 0 5px #00f3ff;
-            letter-spacing: 1px;
+        /* Blinking cursor for tech feel */
+        .cursor-blink {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: var(--pink);
+            animation: blink 1s infinite;
         }
 
-        .nav-title {
-            font-size: 16px;
-            color: #ff00ff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            /* Cyberpunk Grid Background */
-            background: 
-                linear-gradient(rgba(13, 2, 33, 0.9), rgba(13, 2, 33, 0.9)),
-                linear-gradient(0deg, rgba(255, 0, 255, 0.2) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 243, 255, 0.2) 1px, transparent 1px);
-            background-size: 100% 100%, 40px 40px, 40px 40px;
-            animation: gridMove 2s linear infinite;
-        }
-
-        @keyframes gridMove {
-            0% { background-position: 0 0, 0 0, 0 0; }
-            100% { background-position: 0 0, 0 40px, 0 0; }
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        #uiContainer {
-            position: absolute;
-            top: 60px; /* Pushed down by navbar */
-            left: 0;
-            width: 100%;
-            height: calc(100% - 60px); 
-            z-index: 10;
-            pointer-events: none; 
-            display: flex;
-            flex-direction: column; 
-            justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        #controls, #statsContainer {
-            pointer-events: auto;
-            display: flex;
-            align-items: flex-start;
-        }
-
-        #controls {
-            margin-bottom: auto; 
-        }
-
-        #controls button {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            color: #050510;
-            padding: 12px 24px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-right: 15px;
-            text-transform: uppercase;
-            clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
-        }
-
-        #btnStart { background: #00f3ff; box-shadow: 0 0 10px #00f3ff; }
-        #btnPause { background: #ff00ff; box-shadow: 0 0 10px #ff00ff; }
-        #btnReset { background: #ffe600; box-shadow: 0 0 10px #ffe600; }
-
-        #btnStart:hover { background: #ccfcff; transform: translateY(-2px); }
-        #btnPause:hover { background: #ffccff; transform: translateY(-2px); }
-        #btnReset:hover { background: #ffffcc; transform: translateY(-2px); }
-
-        #statsContainer {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 25px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px 20px;
-            border: 1px solid #444;
-            border-radius: 4px;
-        }
-
-        .stat-box {
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        #scoreContainer { color: #00f3ff; }
-        #coinContainer { color: #ffe600; }
-        #levelContainer { color: #ff00ff; }
-
-        span { color: #fff; }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-<nav>
-    <div class="nav-brand">Ayushman Das</div>
-    <div class="nav-title">NEONRUNNER</div>
-</nav>
+    <div class="decoration blob-1"></div>
+    <div class="decoration blob-2"></div>
 
-<div id="gameContainer">
-    <canvas id="gameCanvas"></canvas>
+    <div class="container">
+        <h1>Gaming Portal</h1>
+        <p class="subtitle">Cloud Computing Assignment • Objective 01</p>
 
-    <div id="uiContainer">
-        <div id="controls">
-            <button id="btnStart">Start System</button>
-            <button id="btnPause">Halt</button>
-            <button id="btnReset">Reboot</button>
+        <div class="card">
+            <span class="game-title">&lt;Dreamy Jumper /&gt;</span>
+            <p>An endless platformer developed in HTML5 Canvas.</p>
+            <p style="margin-top: 10px; font-size: 0.9rem; opacity: 0.7;">Hosted via AWS S3 Static Website Hosting</p>
+            
+            <!-- IMPORTANT: REPLACE THE LINK BELOW WITH YOUR AWS LINK -->
+            <a href="http://neonrunner-cyborg.s3-website.ap-south-1.amazonaws.com" class="btn-play">
+                Launch Game
+            </a>
         </div>
-        <div id="statsContainer">
-            <div id="scoreContainer" class="stat-box">
-                SCORE <span id="scoreDisplay">0</span>
-            </div>
-            <div id="coinContainer" class="stat-box">
-                BITS <span id="coinDisplay">0</span>
-            </div>
-            <div id="levelContainer" class="stat-box">
-                LVL <span id="levelDisplay">1</span>
-            </div>
+
+        <div class="assignment-info">
+            <span><div class="cursor-blink"></div> Hosted on GitHub Pages</span>
+            <span>Game on AWS S3 Cloud</span>
         </div>
     </div>
-</div>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const btnStart = document.getElementById('btnStart');
-    const btnPause = document.getElementById('btnPause');
-    const btnReset = document.getElementById('btnReset');
-    const scoreDisplay = document.getElementById('scoreDisplay');
-    const coinDisplay = document.getElementById('coinDisplay');
-    const levelDisplay = document.getElementById('levelDisplay');
-
-    let minPlatformY, maxPlatformY;
-
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        // Adjust for navbar
-        minPlatformY = canvas.height * 0.25 + 60; 
-        maxPlatformY = canvas.height - 50;   
-    }
-
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    // --- Game Constants ---
-    const GRAVITY = 0.5;
-    const INITIAL_JUMP_STRENGTH = -10; 
-    const JUMP_STRENGTH_INCREASE = 0.5; 
-    const MAX_JUMP_STRENGTH = -15; 
-
-    const INITIAL_PLAYER_SPEED = 5;
-    const MAX_PLAYER_SPEED = 10;
-    const INITIAL_SCROLL_SPEED = 2;
-    const SCROLL_SPEED_INCREASE_PER_LEVEL = 0.7;
-    const MAX_SCROLL_SPEED = 10;
-    const SCORE_PER_LEVEL = 10;
-    const POINTS_PER_LAND = 1;
-    const POINTS_PER_COIN = 5;
-
-    const COIN_RADIUS = 8;
-    // Neon Yellow for coins
-    const COIN_COLOR = '#ffe600'; 
-    const COIN_CHANCE = 0.7;
-
-    const PLATFORM_WIDTH = 150;
-    const PLATFORM_HEIGHT = 10; // Thinner platforms for cyber look
-    const INITIAL_PLATFORM_HORIZONTAL_GAP = 220;
-    const MAX_PLATFORM_HORIZONTAL_GAP = 500;
-    const HORIZONTAL_GAP_INCREASE_PER_SCORE = 5;
-    
-    // Neon Cyan for platforms
-    const PLATFORM_COLOR = '#00f3ff'; 
-    
-    const MAX_JUMP_HEIGHT_GAIN = 140;
-    const MAX_FALL_DISTANCE = 150;
-
-    let player, platforms, coins, keys, score, coinsCollected, gameState, gameLoopId;
-    let level;
-    let currentScrollSpeed;
-    let currentPlayerSpeed;
-    let currentJumpStrength;
-    let currentHorizontalGap;
-    let platformTrend;
-    let platformsInTrend;
-    let platformsPerTrend;
-
-    keys = { left: false, right: false, up: false };
-
-    document.addEventListener('keydown', (e) => {
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
-        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = true;
-    });
-
-    document.addEventListener('keyup', (e) => {
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
-    });
-
-    function generateNewPlatform() {
-        if (platforms.length === 0) return;
-
-        const lastPlatform = platforms[platforms.length - 1];
-
-        if (platformsInTrend >= platformsPerTrend) {
-            platformTrend = (platformTrend === 'up') ? 'down' : 'up';
-            platformsInTrend = 0;
-            platformsPerTrend = Math.floor(Math.random() * 4) + 3;
-        }
-
-        let newY;
-        if (platformTrend === 'up') {
-            let randomUp = (Math.random() * 80) + 40;
-            newY = lastPlatform.y - Math.min(randomUp, MAX_JUMP_HEIGHT_GAIN);
-        } else {
-            let randomDown = (Math.random() * 60) + 20;
-            newY = lastPlatform.y + Math.min(randomDown, MAX_FALL_DISTANCE);
-        }
-
-        if (newY < minPlatformY) {
-            newY = minPlatformY;
-            platformTrend = 'down';
-            platformsInTrend = 0;
-        } else if (newY > maxPlatformY) {
-            newY = maxPlatformY;
-            platformTrend = 'up';
-            platformsInTrend = 0;
-        }
-
-        const newX = lastPlatform.x + currentHorizontalGap;
-
-        platforms.push({
-            x: newX,
-            y: newY,
-            width: PLATFORM_WIDTH,
-            height: PLATFORM_HEIGHT,
-            color: PLATFORM_COLOR,
-            isLandedOn: false
-        });
-
-        if (Math.random() < COIN_CHANCE) {
-            const coinX = newX + (PLATFORM_WIDTH / 2);
-            const coinY = newY - COIN_RADIUS - 15;
-            coins.push({
-                x: coinX,
-                y: coinY,
-                radius: COIN_RADIUS,
-                color: COIN_COLOR
-            });
-        }
-
-        platformsInTrend++;
-    }
-
-    function managePlatforms() {
-        platforms = platforms.filter(platform => platform.x + platform.width > 0);
-        coins = coins.filter(coin => coin.x + coin.radius > 0);
-
-        const lastPlatform = platforms[platforms.length - 1];
-        if (lastPlatform.x < canvas.width) {
-            generateNewPlatform();
-        }
-    }
-
-    function resetGame() {
-        resizeCanvas();
-
-        player = {
-            x: 50,
-            y: canvas.height - 100, 
-            width: 30,
-            height: 30,
-            color: '#ff00ff', // Neon Magenta Player
-            dx: 0,
-            dy: 0,
-            onGround: false
-        };
-
-        score = 0;
-        updateScoreDisplay();
-        coinsCollected = 0;
-        updateCoinDisplay();
-
-        level = 1;
-        updateLevelDisplay();
-        
-        currentScrollSpeed = INITIAL_SCROLL_SPEED;
-        currentPlayerSpeed = INITIAL_PLAYER_SPEED;
-        currentHorizontalGap = INITIAL_PLATFORM_HORIZONTAL_GAP;
-        
-        currentJumpStrength = INITIAL_JUMP_STRENGTH;
-
-        platformTrend = 'up';
-        platformsInTrend = 0;
-        platformsPerTrend = Math.floor(Math.random() * 4) + 3;
-
-        platforms = [
-            {
-                x: 0,
-                y: canvas.height - 40, 
-                width: 300,
-                height: 40,
-                color: PLATFORM_COLOR,
-                isLandedOn: true
-            }
-        ];
-
-        coins = [];
-
-        while (platforms[platforms.length - 1].x < canvas.width) {
-            generateNewPlatform();
-        }
-
-        gameState = 'menu';
-        updateScoreDisplay();
-    }
-
-    function updateCoinDisplay() { coinDisplay.textContent = coinsCollected; }
-    function updateScoreDisplay() { scoreDisplay.textContent = score; }
-    function updateLevelDisplay() { levelDisplay.textContent = level; }
-
-    function update() {
-
-        if (keys.left) player.dx = -currentPlayerSpeed;
-        else if (keys.right) player.dx = currentPlayerSpeed;
-        else player.dx = 0;
-
-        if (keys.up && player.onGround) {
-            player.dy = currentJumpStrength;
-            player.onGround = false;
-        }
-
-        player.dy += GRAVITY;
-        player.x += player.dx;
-        player.y += player.dy;
-
-        player.x -= currentScrollSpeed;
-        platforms.forEach(p => p.x -= currentScrollSpeed);
-        coins.forEach(c => c.x -= currentScrollSpeed);
-
-        player.onGround = false;
-        platforms.forEach(platform => {
-            if (player.x < platform.x + platform.width &&
-                player.x + player.width > platform.x &&
-                player.y + player.height > platform.y &&
-                player.y < platform.y &&
-                player.dy > 0)
-            {
-                player.y = platform.y - player.height;
-                player.dy = 0;
-                player.onGround = true;
-
-                if (!platform.isLandedOn) {
-                    score += POINTS_PER_LAND;
-                    updateScoreDisplay();
-                    platform.isLandedOn = true;
-
-                    currentHorizontalGap = Math.min(
-                        MAX_PLATFORM_HORIZONTAL_GAP,
-                        INITIAL_PLATFORM_HORIZONTAL_GAP + (score * HORIZONTAL_GAP_INCREASE_PER_SCORE)
-                    );
-
-                    const gapRange = MAX_PLATFORM_HORIZONTAL_GAP - INITIAL_PLATFORM_HORIZONTAL_GAP;
-                    const speedRange = MAX_PLAYER_SPEED - INITIAL_PLAYER_SPEED;
-                    const gapPercentage = (currentHorizontalGap - INITIAL_PLATFORM_HORIZONTAL_GAP) / gapRange;
-                    currentPlayerSpeed = INITIAL_PLAYER_SPEED + (speedRange * gapPercentage);
-
-                    if (score > 0 && score % SCORE_PER_LEVEL === 0) {
-                        level++;
-                        updateLevelDisplay();
-                        
-                        currentScrollSpeed = Math.min(
-                            MAX_SCROLL_SPEED,
-                            INITIAL_SCROLL_SPEED + ((level - 1) * SCROLL_SPEED_INCREASE_PER_LEVEL)
-                        );
-
-                        let newJumpStrength = INITIAL_JUMP_STRENGTH - ((level - 1) * JUMP_STRENGTH_INCREASE);
-                        currentJumpStrength = Math.max(MAX_JUMP_STRENGTH, newJumpStrength);
-                    }
-                }
-            }
-        });
-
-        checkCoinCollisions();
-
-        if (player.x < 0) player.x = 0;
-        if (player.x + player.width > canvas.width) {
-            player.x = canvas.width - player.width;
-        }
-
-        managePlatforms();
-
-        if (player.y > canvas.height) {
-            gameState = 'gameOver';
-            btnStart.textContent = 'Re-Initialize';
-        }
-    }
-
-    function checkCoinCollisions() {
-        for (let i = coins.length - 1; i >= 0; i--) {
-            const coin = coins[i];
-            if (player.x < coin.x + coin.radius &&
-                player.x + player.width > coin.x - coin.radius &&
-                player.y < coin.y + coin.radius &&
-                player.y + player.height > coin.y - coin.radius)
-            {
-                coinsCollected += 1;
-                updateCoinDisplay();
-                coins.splice(i, 1);
-            }
-        }
-    }
-
-    function drawPlayer() {
-        ctx.save();
-        // Neon Glow Effect
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = player.color;
-        ctx.fillStyle = player.color;
-        ctx.fillRect(player.x, player.y, player.width, player.height);
-        
-        // Inner bright core
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(player.x + 5, player.y + 5, player.width - 10, player.height - 10);
-        ctx.restore();
-    }
-
-    function drawPlatforms() {
-        platforms.forEach(platform => {
-            ctx.save();
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = platform.color;
-            ctx.fillStyle = platform.color;
-            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-            ctx.restore();
-        });
-    }
-
-    function drawCoins() {
-        coins.forEach(coin => {
-            ctx.save();
-            ctx.beginPath();
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = coin.color;
-            ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
-            ctx.fillStyle = coin.color;
-            ctx.fill();
-            ctx.closePath();
-            ctx.restore();
-        });
-    }
-
-    function drawOverlay(text1, text2) {
-        ctx.fillStyle = "rgba(5, 5, 16, 0.85)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.save();
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = "#00f3ff";
-        ctx.fillStyle = "white";
-        ctx.textAlign = "center";
-        ctx.font = "700 60px 'Orbitron', sans-serif";
-        ctx.fillText(text1, canvas.width / 2, canvas.height / 2 - 20);
-        
-        if (text2) {
-            ctx.shadowColor = "#ff00ff";
-            ctx.font = "400 24px 'Orbitron', sans-serif";
-            ctx.fillStyle = "#ff00ff";
-            ctx.fillText(text2, canvas.width / 2, canvas.height / 2 + 40);
-        }
-        ctx.restore();
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawPlatforms();
-        drawCoins();
-        drawPlayer();
-
-        if (gameState === 'menu') {
-            drawOverlay("NEON JUMPER", "INITIATE SEQUENCE [START]");
-        } else if (gameState === 'paused') {
-            drawOverlay("SYSTEM HALTED", "AWAITING INPUT");
-        } else if (gameState === 'gameOver') {
-            drawOverlay("CRITICAL FAILURE", `SCORE: ${score} | BITS: ${coinsCollected} | LVL: ${level}`);
-        }
-    }
-
-    function gameLoop() {
-        if (gameState === 'running') update();
-        draw();
-        gameLoopId = requestAnimationFrame(gameLoop);
-    }
-
-    btnStart.addEventListener('click', () => {
-        if (gameState === 'menu' || gameState === 'paused') {
-            gameState = 'running';
-            btnStart.textContent = 'Running...';
-        } else if (gameState === 'gameOver') {
-            resetGame();
-            gameState = 'running';
-            btnStart.textContent = 'Running...';
-        }
-    });
-
-    btnPause.addEventListener('click', () => {
-        if (gameState === 'running') {
-            gameState = 'paused';
-            btnStart.textContent = 'Resume';
-        }
-    });
-
-    btnReset.addEventListener('click', () => {
-        if (gameLoopId) cancelAnimationFrame(gameLoopId);
-        resetGame();
-        draw();
-        gameLoop();
-        btnStart.textContent = 'Start System';
-    });
-
-    resetGame();
-    gameLoop();
-
-</script>
 </body>
 </html>
